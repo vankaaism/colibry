@@ -227,7 +227,7 @@ Priority: P0 required to pass the rubric, P1 strongly wanted, P2 only if time al
 - A day with `TotalSteps == 0` is non-wear, whatever its sedentary minutes, and is excluded from formulas and statistics.
 - Dates are parsed as M/D/YYYY with a one- or two-digit month and day.
 - If the file is missing, print a clear message and stop without a traceback.
-- Acceptance: rows with invalid numbers, blank used cells, invalid dates, or the wrong column count are skipped and counted; loaded + broken = data rows in the file; on the current file this gives 457 loaded, 0 broken, 61 non-wear, 396 used.
+- Acceptance: rows with invalid numbers, blank used cells, invalid dates, or the wrong column count are skipped and counted; loaded + broken = data rows in the file; on the current file this gives 457 loaded, 0 broken, 61 non-wear excluded, 396 days used from 34 users.
 
 **FR-2 Repeating menu and input validation (P0)**
 
