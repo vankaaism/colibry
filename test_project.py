@@ -4,12 +4,12 @@ import os
 import tempfile
 import unittest
 
-from models import (DayRecord, FitbitDataset, LinearModel, LEVEL_SEDENTARY,
+from models import (DayRecord, LinearModel, LEVEL_SEDENTARY,
                     LEVEL_LIGHTLY_ACTIVE, LEVEL_ACTIVE)
 from text_utils import parse_date
 from data_loader import load_dataset
 from analysis import (average, percentage, percentile, sort_by, rank_predictors,
-                      choose_model, most_similar_users)
+                      supplied_models)
 
 HEADER = ("Id,ActivityDate,TotalSteps,TotalDistance,TrackerDistance,"
           "LoggedActivitiesDistance,VeryActiveDistance,ModeratelyActiveDistance,"
@@ -125,8 +125,8 @@ class TestRankPredictors(unittest.TestCase):
         self.assertGreaterEqual(models[1].r_squared, models[2].r_squared)
 
 
-class TestChooseModel(unittest.TestCase):
-    """Tests for picking the formula used in menu 3."""
+class TestSuppliedModels(unittest.TestCase):
+    """Tests for picking the formulas used in menu 3."""
 
     def make_model(self, predictor, fitted):
         """Return a LinearModel marked as fitted or not, without real data."""
@@ -134,22 +134,34 @@ class TestChooseModel(unittest.TestCase):
         model.is_fitted = fitted
         return model
 
-    def test_picks_best_supplied(self):
-        """The best-ranked model whose predictor was supplied is chosen."""
-        models = [self.make_model("distance", True), self.make_model("steps", True)]
-        self.assertIs(choose_model(models, ["steps"]), models[1])
-        self.assertIs(choose_model(models, ["steps", "distance"]), models[0])
+    def test_keeps_ranked_order(self):
+        """Supplied fitted models come back in their ranked order, best first."""
+        models = [self.make_model("distance", True), self.make_model("sedentary_min", True),
+                  self.make_model("steps", True)]
+        result = supplied_models(models, ["steps", "distance"])
+        self.assertEqual(len(result), 2)
+        self.assertIs(result[0], models[0])
+        self.assertIs(result[1], models[2])
 
     def test_skips_unfitted(self):
         """An unfitted model is skipped even if its predictor was supplied."""
         models = [self.make_model("distance", False), self.make_model("steps", True)]
-        self.assertIs(choose_model(models, ["distance", "steps"]), models[1])
+        result = supplied_models(models, ["distance", "steps"])
+        self.assertEqual(len(result), 1)
+        self.assertIs(result[0], models[1])
 
-    def test_none_when_nothing_matches(self):
-        """None is returned when no fitted model matches the supplied predictors."""
+    def test_empty_when_nothing_matches(self):
+        """An empty list is returned when no fitted model matches the supplied predictors."""
         models = [self.make_model("distance", True), self.make_model("steps", False)]
-        self.assertIsNone(choose_model(models, ["steps", "sedentary_min"]))
-        self.assertIsNone(choose_model(models, []))
+        self.assertEqual(supplied_models(models, ["steps", "sedentary_min"]), [])
+        self.assertEqual(supplied_models(models, []), [])
+
+    def test_first_two_with_slicing(self):
+        """Slicing [:2] keeps at most two models and works when fewer exist."""
+        models = [self.make_model("distance", True), self.make_model("steps", True),
+                  self.make_model("very_active_min", True)]
+        self.assertEqual(len(supplied_models(models, ["steps", "distance", "very_active_min"])[:2]), 2)
+        self.assertEqual(len(supplied_models(models, ["steps"])[:2]), 1)
 
 
 class TestParseDate(unittest.TestCase):
@@ -219,32 +231,6 @@ class TestLoader(unittest.TestCase):
         self.assertEqual(non_wear, 61)
         self.assertEqual(dataset.count(), 396)
         self.assertEqual(len(dataset.user_ids()), 34)
-
-
-class TestMostSimilarUsers(unittest.TestCase):
-    """Tests for finding the most similar Fitbit users."""
-
-    def setUp(self):
-        """Build a small dataset with three users."""
-        self.dataset = FitbitDataset()
-        self.dataset.add(make_record(user_id=1, steps=2000, very_active=0, sedentary=1200))
-        self.dataset.add(make_record(user_id=2, steps=8000, very_active=30, sedentary=700))
-        self.dataset.add(make_record(user_id=3, steps=15000, very_active=90, sedentary=500))
-
-    def test_n_zero_returns_empty(self):
-        """Asking for 0 users returns an empty list."""
-        self.assertEqual(most_similar_users(self.dataset, 8000, 30, 700, 0), [])
-
-    def test_n_larger_than_users_returns_all(self):
-        """Asking for more users than exist returns every user."""
-        result = most_similar_users(self.dataset, 8000, 30, 700, 10)
-        self.assertEqual(len(result), 3)
-
-    def test_nearest_first(self):
-        """The user identical to the input comes first."""
-        result = most_similar_users(self.dataset, 8000, 30, 700, 3)
-        self.assertEqual(result[0]["user_id"], 2)
-        self.assertAlmostEqual(result[0]["distance"], 0.0)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,11 @@
 """Calibry: a terminal menu that builds calorie formulas from Fitbit data and checks them against Garmin data."""
 
 from models import (CSV_FILE, MINUTES_PER_DAY, MAX_STEPS, MAX_DISTANCE_KM,
-                    MAX_CALORIES, SIMILAR_USERS, LINE_WIDTH)
+                    MAX_CALORIES, ESTIMATES_SHOWN, LINE_WIDTH)
 from text_utils import parse_int, parse_float
 from data_loader import load_dataset
-from analysis import (dataset_summary, rank_predictors, choose_model, find_model,
-                      percentile, percentage, column_values, most_similar_users)
+from analysis import (dataset_summary, rank_predictors, supplied_models,
+                      percentile, percentage, column_values)
 
 
 # ----- Input -----
@@ -43,18 +43,6 @@ def ask_float(prompt, low, high):
             print(f"  Please type a number from {low} to {high}.")
         else:
             return number
-
-
-def ask_minutes():
-    """Ask for very active and sedentary minutes until together they fit in one day."""
-    while True:
-        very_active = ask_int("Very active minutes     : ", 0, MINUTES_PER_DAY)
-        sedentary = ask_int("Sedentary minutes       : ", 0, MINUTES_PER_DAY)
-        if very_active + sedentary > MINUTES_PER_DAY:
-            print(f"  Very active + sedentary minutes is {very_active + sedentary}, "
-                  f"but a day has only {MINUTES_PER_DAY}. Please type both again.")
-        else:
-            return very_active, sedentary
 
 
 # ----- Output helpers -----
@@ -176,26 +164,26 @@ def show_check(dataset):
     print("Type the numbers from one day in Garmin Connect.")
     steps = ask_int("Steps that day          : ", 0, MAX_STEPS)
     distance = ask_float("Distance (km)           : ", 0.0, MAX_DISTANCE_KM)
-    very_active, sedentary = ask_minutes()
+    very_active = ask_int("Very active minutes     : ", 0, MINUTES_PER_DAY)
     garmin = ask_int("Total calories (Garmin) : ", 0, MAX_CALORIES)
 
-    supplied = ["steps", "distance", "very_active_min", "sedentary_min"]
-    values = {"steps": steps, "distance": distance,
-              "very_active_min": very_active, "sedentary_min": sedentary}
+    supplied = ["steps", "distance", "very_active_min"]
+    values = {"steps": steps, "distance": distance, "very_active_min": very_active}
 
-    best = choose_model(models, supplied)
-    if best is None:
+    # Fitted models for the values typed in, still in ranked order; show the first two.
+    matching = supplied_models(models, supplied)
+    if len(matching) == 0:
         print("No formula could be built from the values you typed.")
         return
+    shown = matching[:ESTIMATES_SHOWN]
+    best = shown[0]
     estimate = best.predict(values[best.predictor])
-    steps_model = find_model(models, "steps")
 
     print()
     print_line()
-    print(f"{'Estimate (' + best.label + ' formula)':<34}: {estimate:,.0f} kcal")
-    if steps_model is not None and steps_model is not best:
-        steps_estimate = steps_model.predict(steps)
-        print(f"{'Estimate (' + steps_model.label + ' formula)':<34}: {steps_estimate:,.0f} kcal")
+    for model in shown:
+        model_estimate = model.predict(values[model.predictor])
+        print(f"{'Estimate (' + model.label + ' formula)':<34}: {model_estimate:,.0f} kcal")
     print(f"{'Garmin':<34}: {garmin:,} kcal")
 
     difference = estimate - garmin
@@ -209,16 +197,6 @@ def show_check(dataset):
     print(f"{'Your steps percentile':<34}: {step_rank:.0f} (of {dataset.count()} days)")
     print_line()
     print("Garmin uses heart rate and your body profile, so a difference is expected.")
-
-    print()
-    print("Most similar Fitbit users")
-    print(f"{'Rank':<6}{'User':<14}{'Avg steps':>10}{'Very active':>13}{'Sedentary':>11}")
-    similar = most_similar_users(dataset, steps, very_active, sedentary, SIMILAR_USERS)
-    rank = 1
-    for user in similar:
-        print(f"{rank:<6}{user['user_id']:<14}{user['avg_steps']:>10,.0f}"
-              f"{user['avg_very_active']:>13.1f}{user['avg_sedentary']:>11.0f}")
-        rank = rank + 1
 
 
 # ----- Main loop -----

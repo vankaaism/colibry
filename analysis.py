@@ -1,9 +1,7 @@
-"""Calculations for Calibry: averages, percentile, sorting, regression ranking and similarity.
+"""Calculations for Calibry: averages, percentile, sorting and regression ranking.
 
 This file has no print() or input(), so every function is easy to test.
 """
-
-import math
 
 from models import ACTIVITY_LEVELS, PREDICTORS, LinearModel
 
@@ -34,17 +32,6 @@ def percentile(value, values):
         if other < value:
             below = below + 1
     return percentage(below, len(values))
-
-
-def maximum(values):
-    """Return the largest number in a list, or 0.0 for an empty list."""
-    if len(values) == 0:
-        return 0.0
-    largest = values[0]
-    for value in values:
-        if value > largest:
-            largest = value
-    return largest
 
 
 def get_value(item, key_name):
@@ -130,63 +117,10 @@ def rank_predictors(records):
     return sort_by(fitted, "r_squared", True) + unfitted
 
 
-def choose_model(models, supplied):
-    """Return the best-ranked fitted model whose predictor is in the supplied list, or None."""
+def supplied_models(models, supplied):
+    """Return the fitted models whose predictor is in the supplied list, keeping their order."""
+    result = []
     for model in models:
         if model.is_fitted and model.predictor in supplied:
-            return model
-    return None
-
-
-def find_model(models, predictor):
-    """Return the fitted model for one predictor attribute, or None."""
-    for model in models:
-        if model.is_fitted and model.predictor == predictor:
-            return model
-    return None
-
-
-def user_averages(dataset):
-    """Return one dict per user with average steps, very active and sedentary minutes."""
-    result = []
-    for user_id in dataset.user_ids():
-        records = dataset.records_of(user_id)
-        result.append({
-            "user_id": user_id,
-            "days": len(records),
-            "avg_steps": average(column_values(records, "steps")),
-            "avg_very_active": average(column_values(records, "very_active_min")),
-            "avg_sedentary": average(column_values(records, "sedentary_min")),
-        })
+            result.append(model)
     return result
-
-
-def scale(value, largest):
-    """Return value divided by largest, or 0.0 when largest is 0."""
-    if largest == 0:
-        return 0.0
-    return value / largest
-
-
-def most_similar_users(dataset, steps, very_active, sedentary, n):
-    """Return the n users whose averages are closest to the given day, nearest first."""
-    if n <= 0:
-        return []
-
-    max_steps = maximum(column_values(dataset.records, "steps"))
-    max_very_active = maximum(column_values(dataset.records, "very_active_min"))
-    max_sedentary = maximum(column_values(dataset.records, "sedentary_min"))
-
-    users = user_averages(dataset)
-    for user in users:
-        d_steps = scale(user["avg_steps"], max_steps) - scale(steps, max_steps)
-        d_very_active = (scale(user["avg_very_active"], max_very_active)
-                         - scale(very_active, max_very_active))
-        d_sedentary = (scale(user["avg_sedentary"], max_sedentary)
-                       - scale(sedentary, max_sedentary))
-        user["distance"] = math.sqrt(d_steps * d_steps
-                                     + d_very_active * d_very_active
-                                     + d_sedentary * d_sedentary)
-
-    ranked = sort_by(users, "distance")
-    return ranked[:n]

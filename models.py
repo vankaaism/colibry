@@ -36,7 +36,7 @@ MAX_DISTANCE_KM = 100.0
 MAX_CALORIES = 10000
 
 # ----- Output -----
-SIMILAR_USERS = 3
+ESTIMATES_SHOWN = 2
 LINE_WIDTH = 66
 
 # ----- Predictors for the calorie formulas: (DayRecord attribute, label) -----
