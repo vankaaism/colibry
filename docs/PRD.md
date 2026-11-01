@@ -80,7 +80,7 @@ Every extra 1 km adds about 120 kcal.
 This formula explains about 36% of the variation in calories.
 ```
 
-**Menu 3: Check your data** (example day: 6,534 steps, 4.9 km)
+**Menu 3: Check your data** (illustrative day: 6,534 steps, 4.9 km, 20 very active minutes, 780 sedentary minutes, 2,150 kcal; made-up values, not the user's real Garmin data)
 
 ```
 Type the numbers from one day in Garmin Connect.
@@ -106,7 +106,7 @@ Rank  User           Avg steps  Very active  Sedentary
 3     4319703577         8,532          7.2        720
 ```
 
-The figures in both wireframes are real output on the current file (396 days).
+Both wireframes show real program output on the current file (396 days). The menu 3 inputs are an illustrative day, not real Garmin data.
 
 Display rule: every result is shown in aligned columns, never as a raw Python list.
 
@@ -262,7 +262,7 @@ Priority: P0 required to pass the rubric, P1 strongly wanted, P2 only if time al
 
 - Input: steps, distance (km, decimals allowed), very active minutes, sedentary minutes, and Garmin total calories.
 - Output: estimate from the best-ranked fitted formula whose predictor the user supplied (Total distance on the current file), the Total steps formula estimate on a second line for comparison, difference in kcal and percent (from the main estimate), step percentile, and the 3 most similar Fitbit users.
-- Acceptance: very active + sedentary minutes over 1,440 is rejected with a message; Garmin calories of 0 do not cause division by zero (the percent is shown as n/a); the example day (6,534 steps, 4.9 km, 20, 780, 2,150 kcal) gives 2,226 kcal from the distance formula and 2,196 kcal from the steps formula.
+- Acceptance: very active + sedentary minutes over 1,440 is rejected with a message; Garmin calories of 0 do not cause division by zero (the percent is shown as n/a); the illustrative day in 1.4 (6,534 steps, 4.9 km, 20, 780, 2,150 kcal; not real Garmin data) gives 2,226 kcal from the distance formula and 2,196 kcal from the steps formula.
 
 **FR-6 Train/test check (DROPPED)**
 
