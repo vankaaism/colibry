@@ -30,6 +30,15 @@ LEVEL_LIGHTLY_ACTIVE = "Lightly Active"
 LEVEL_ACTIVE = "Active"
 ACTIVITY_LEVELS = [LEVEL_SEDENTARY, LEVEL_LIGHTLY_ACTIVE, LEVEL_ACTIVE]
 
+# ----- Input limits for menu 3 -----
+MAX_STEPS = 100000
+MAX_DISTANCE_KM = 100.0
+MAX_CALORIES = 10000
+
+# ----- Output -----
+SIMILAR_USERS = 3
+LINE_WIDTH = 66
+
 # ----- Predictors for the calorie formulas: (DayRecord attribute, label) -----
 PREDICTORS = [
     ("steps", "Total steps"),

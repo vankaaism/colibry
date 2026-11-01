@@ -130,6 +130,22 @@ def rank_predictors(records):
     return sort_by(fitted, "r_squared", True) + unfitted
 
 
+def choose_model(models, supplied):
+    """Return the best-ranked fitted model whose predictor is in the supplied list, or None."""
+    for model in models:
+        if model.is_fitted and model.predictor in supplied:
+            return model
+    return None
+
+
+def find_model(models, predictor):
+    """Return the fitted model for one predictor attribute, or None."""
+    for model in models:
+        if model.is_fitted and model.predictor == predictor:
+            return model
+    return None
+
+
 def user_averages(dataset):
     """Return one dict per user with average steps, very active and sedentary minutes."""
     result = []
