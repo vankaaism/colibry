@@ -5,7 +5,7 @@ from models import (CSV_FILE, MINUTES_PER_DAY, MAX_STEPS, MAX_DISTANCE_KM,
 from text_utils import parse_int, parse_float
 from data_loader import load_dataset
 from analysis import (dataset_summary, rank_predictors, supplied_models,
-                      percentile, percentage, column_values)
+                      interpret_difference, percentile, percentage, column_values)
 
 
 # ----- Input -----
@@ -192,6 +192,8 @@ def show_check(dataset):
     else:
         percent_text = f"{percentage(difference, garmin):+.1f}%"
     print(f"{'Difference (best formula)':<34}: {difference:+,.0f} kcal ({percent_text})")
+    if garmin != 0:
+        print(interpret_difference(difference, best.mae))
 
     step_rank = percentile(steps, column_values(dataset.records, "steps"))
     print(f"{'Your steps percentile':<34}: {step_rank:.0f} (of {dataset.count()} days)")

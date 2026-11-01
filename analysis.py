@@ -117,6 +117,21 @@ def rank_predictors(records):
     return sort_by(fitted, "r_squared", True) + unfitted
 
 
+def interpret_difference(difference, mae):
+    """Return a plain-English sentence comparing a difference in kcal with the formula's MAE."""
+    size = abs(difference)
+    if size <= mae / 2:
+        return (f"Very close: the difference is well inside the formula's usual error "
+                f"(MAE {mae:,.0f} kcal).")
+    elif size <= mae:
+        return (f"The difference is smaller than the formula's average error "
+                f"(MAE {mae:,.0f} kcal), so closer than it usually was on the Fitbit data.")
+    else:
+        return (f"The difference is larger than the formula's usual error "
+                f"(MAE {mae:,.0f} kcal). This can happen on days with cycling, hiking, "
+                f"stairs or other effort that steps and distance miss.")
+
+
 def supplied_models(models, supplied):
     """Return the fitted models whose predictor is in the supplied list, keeping their order."""
     result = []

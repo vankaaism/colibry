@@ -9,7 +9,7 @@ from models import (DayRecord, LinearModel, LEVEL_SEDENTARY,
 from text_utils import parse_date
 from data_loader import load_dataset
 from analysis import (average, percentage, percentile, sort_by, rank_predictors,
-                      supplied_models)
+                      supplied_models, interpret_difference)
 
 HEADER = ("Id,ActivityDate,TotalSteps,TotalDistance,TrackerDistance,"
           "LoggedActivitiesDistance,VeryActiveDistance,ModeratelyActiveDistance,"
@@ -162,6 +162,35 @@ class TestSuppliedModels(unittest.TestCase):
                   self.make_model("very_active_min", True)]
         self.assertEqual(len(supplied_models(models, ["steps", "distance", "very_active_min"])[:2]), 2)
         self.assertEqual(len(supplied_models(models, ["steps"])[:2]), 1)
+
+
+class TestInterpretDifference(unittest.TestCase):
+    """Tests for the plain-English comparison of a difference with the MAE."""
+
+    def test_very_close(self):
+        """A difference well under half the MAE is very close."""
+        self.assertTrue(interpret_difference(100, 500).startswith("Very close"))
+
+    def test_exactly_half_mae_is_very_close(self):
+        """Exactly half the MAE still counts as very close."""
+        self.assertTrue(interpret_difference(250, 500).startswith("Very close"))
+
+    def test_smaller_than_mae(self):
+        """A difference between half the MAE and the MAE is smaller than the average error."""
+        self.assertIn("smaller than", interpret_difference(-300, 500))
+
+    def test_exactly_mae_is_smaller(self):
+        """Exactly the MAE still counts as smaller than the average error."""
+        self.assertIn("smaller than", interpret_difference(500, 500))
+
+    def test_larger_than_mae(self):
+        """A difference above the MAE is larger than the usual error."""
+        self.assertIn("larger than", interpret_difference(-501, 500))
+
+    def test_message_names_mae(self):
+        """Every message names the MAE in kcal."""
+        for difference in [0, 400, 2000]:
+            self.assertIn("(MAE 504 kcal)", interpret_difference(difference, 504))
 
 
 class TestParseDate(unittest.TestCase):

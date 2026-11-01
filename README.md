@@ -103,7 +103,7 @@ Every extra 1 km adds about 120 kcal.
 This formula explains about 36% of the variation in calories.
 ```
 
-**3. Check your data (Garmin).** Asks for steps, distance (km), very active minutes and Garmin's total calories. It takes the fitted formulas whose predictor you typed in, keeps them in ranked order, and shows the estimates from the first two (Total distance and Total steps on this data). The first one is the main estimate: the program compares it with Garmin and also shows your step percentile. The sample below uses an illustrative day, not real Garmin data.
+**3. Check your data (Garmin).** Asks for steps, distance (km), very active minutes and Garmin's total calories. It takes the fitted formulas whose predictor you typed in, keeps them in ranked order, and shows the estimates from the first two (Total distance and Total steps on this data). The first one is the main estimate: the program compares it with Garmin, then explains the difference in plain words by comparing it with that formula's average error (MAE). A difference of at most half the MAE is very close, at most the MAE is smaller than the formula's average error, and anything larger is outside its usual error. This line is skipped when Garmin's calories are 0. Last, it shows your step percentile. The sample below uses an illustrative day, not real Garmin data.
 
 ```
 ------------------------------------------------------------------
@@ -111,6 +111,7 @@ Estimate (Total distance formula) : 2,226 kcal
 Estimate (Total steps formula)    : 2,196 kcal
 Garmin                            : 2,150 kcal
 Difference (best formula)         : +76 kcal (+3.5%)
+Very close: the difference is well inside the formula's usual error (MAE 504 kcal).
 Your steps percentile             : 45 (of 396 days)
 ------------------------------------------------------------------
 Garmin uses heart rate and your body profile, so a difference is expected.
@@ -141,10 +142,10 @@ Video: (link coming soon)
 | Constants | `models.py` | module level | `CSV_FILE`, `PREDICTORS`, `MINUTES_PER_DAY` and the other capital-letter names at the top of the file |
 | Input and output | `main.py` | `ask_int` | `input()` for the answer, `print()` for the error messages |
 | Operators | `models.py` | `LinearModel.fit` | `+`, `-`, `*`, `/` for the means and regression sums, `1 - sum_squared_error / sum_yy` for R², `==` to guard against division by zero |
-| Conditionals | `models.py` | `DayRecord.activity_level` | `if` / `elif` / `else` for the three activity levels |
+| Conditionals | `models.py` / `analysis.py` | `DayRecord.activity_level`, `interpret_difference` | `if` / `elif` / `else` for the three activity levels, and for the three ways a Garmin difference compares with the MAE |
 | Loops | `main.py` | `run_menu` | `while True` menu loop that stops with `break` on Exit |
 | Functions | `analysis.py` | `build_model` | Takes records and a predictor, returns a fitted `LinearModel` |
 | Lists and slicing | `main.py` | `show_check` | `supplied_models` builds the list of matching formulas in ranked order; `matching[:ESTIMATES_SHOWN]` (`ESTIMATES_SHOWN = 2`) keeps the first two |
 | String manipulation | `text_utils.py` | `parse_date` | `split("/")`, `strip()`, `len()` and a digit check on each part |
 | OOP | `models.py` | `DayRecord` | Class with `__init__`, `activity_level`, `is_worn` and `__str__` |
-| Unit tests | `test_project.py` | `TestLinearModel.test_perfect_line` | Checks that y = 2x + 1 gives a = 1, b = 2, R² = 1 (22 tests in total) |
+| Unit tests | `test_project.py` | `TestLinearModel.test_perfect_line` | Checks that y = 2x + 1 gives a = 1, b = 2, R² = 1 (28 tests in total) |
