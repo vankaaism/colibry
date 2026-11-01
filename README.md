@@ -27,12 +27,12 @@ I use a Garmin watch and wanted to test whether a calorie formula built from oth
 |---|---|---|
 | Id | int | Grouping days by user |
 | ActivityDate | date (M/D/YYYY) | Parsed and stored with each day |
-| TotalSteps | int | Predictor, step percentile, similar users, non-wear check |
+| TotalSteps | int | Predictor, step percentile, non-wear check |
 | TotalDistance | float (km) | Predictor |
-| VeryActiveMinutes | int | Predictor, similar users |
+| VeryActiveMinutes | int | Predictor |
 | FairlyActiveMinutes | int | Predictor |
 | LightlyActiveMinutes | int | Predictor |
-| SedentaryMinutes | int | Predictor, similar users |
+| SedentaryMinutes | int | Predictor |
 | Calories | int | The value every formula estimates |
 
 **Columns skipped**
@@ -45,7 +45,7 @@ I use a Garmin watch and wanted to test whether a calorie formula built from oth
 
 **Blank cells and broken rows.** The file has no blank cells in any column. The loader still checks: a row is skipped and counted as *broken* if it has the wrong number of columns, a blank cell in any used column, a number that cannot be read, a negative number, or a date that is not M/D/YYYY. A blank cell in a skipped column does not matter. On the real file, 0 rows are broken.
 
-**Non-wear days.** A day with `TotalSteps == 0` is treated as a day the watch was not worn, whatever its sedentary minutes. These days are counted and left out of the formulas, averages, percentile and similar-user search. The real file has 61 such days (53 of them also show 1440 sedentary minutes). All 5 days with 0 calories are among them. One of the 35 users has only non-wear days, so the program works with **396 days from 34 users**.
+**Non-wear days.** A day with `TotalSteps == 0` is treated as a day the watch was not worn, whatever its sedentary minutes. These days are counted and left out of the formulas, averages and percentile. The real file has 61 such days (53 of them also show 1440 sedentary minutes). All 5 days with 0 calories are among them. One of the 35 users has only non-wear days, so the program works with **396 days from 34 users**.
 
 ## How to run
 
@@ -103,7 +103,7 @@ Every extra 1 km adds about 120 kcal.
 This formula explains about 36% of the variation in calories.
 ```
 
-**3. Check your data (Garmin).** Asks for steps, distance (km), very active minutes, sedentary minutes and Garmin's total calories. Very active plus sedentary minutes above 1,440 is rejected. The program estimates calories with the best-ranked formula whose predictor you typed in (Total distance on this data), shows the steps formula on a second line for comparison, and gives the difference from Garmin, your step percentile, and the 3 Fitbit users whose averages are closest to your day. The sample below uses an illustrative day, not real Garmin data.
+**3. Check your data (Garmin).** Asks for steps, distance (km), very active minutes and Garmin's total calories. It takes the fitted formulas whose predictor you typed in, keeps them in ranked order, and shows the estimates from the first two (Total distance and Total steps on this data). The first one is the main estimate: the program compares it with Garmin and also shows your step percentile. The sample below uses an illustrative day, not real Garmin data.
 
 ```
 ------------------------------------------------------------------
@@ -114,12 +114,6 @@ Difference (best formula)         : +76 kcal (+3.5%)
 Your steps percentile             : 45 (of 396 days)
 ------------------------------------------------------------------
 Garmin uses heart rate and your body profile, so a difference is expected.
-
-Most similar Fitbit users
-Rank  User           Avg steps  Very active  Sedentary
-1     7086361926         6,104         26.2        889
-2     3977333714         8,664         12.2        709
-3     4319703577         8,532          7.2        720
 ```
 
 **4. Exit.** Ends the program. Garmin data you type is not saved anywhere.
@@ -143,14 +137,14 @@ Video: (link coming soon)
 
 | Concept | File | Function | Where it shows |
 |---|---|---|---|
-| Variables and data types | `main.py` | `show_check` | `steps` (int), `distance` (float), `supplied` (list), `values` (dict) |
+| Variables and data types | `main.py` | `show_check` | `steps` (int), `distance` (float), `garmin` (int), `supplied` (list), `values` (dict) |
 | Constants | `models.py` | module level | `CSV_FILE`, `PREDICTORS`, `MINUTES_PER_DAY` and the other capital-letter names at the top of the file |
 | Input and output | `main.py` | `ask_int` | `input()` for the answer, `print()` for the error messages |
-| Operators | `models.py` | `LinearModel.fit` | `+`, `-`, `*`, `/` for the regression sums; `==` to guard against division by zero |
+| Operators | `models.py` | `LinearModel.fit` | `+`, `-`, `*`, `/` for the means and regression sums, `1 - sum_squared_error / sum_yy` for R², `==` to guard against division by zero |
 | Conditionals | `models.py` | `DayRecord.activity_level` | `if` / `elif` / `else` for the three activity levels |
 | Loops | `main.py` | `run_menu` | `while True` menu loop that stops with `break` on Exit |
 | Functions | `analysis.py` | `build_model` | Takes records and a predictor, returns a fitted `LinearModel` |
-| Lists and slicing | `analysis.py` | `most_similar_users` | Builds a list of users and returns `ranked[:n]` |
+| Lists and slicing | `main.py` | `show_check` | `supplied_models` builds the list of matching formulas in ranked order; `matching[:ESTIMATES_SHOWN]` (`ESTIMATES_SHOWN = 2`) keeps the first two |
 | String manipulation | `text_utils.py` | `parse_date` | `split("/")`, `strip()`, `len()` and a digit check on each part |
 | OOP | `models.py` | `DayRecord` | Class with `__init__`, `activity_level`, `is_worn` and `__str__` |
-| Unit tests | `test_project.py` | `TestLinearModel.test_perfect_line` | Checks that y = 2x + 1 gives a = 1, b = 2, R² = 1 (24 tests in total) |
+| Unit tests | `test_project.py` | `TestLinearModel.test_perfect_line` | Checks that y = 2x + 1 gives a = 1, b = 2, R² = 1 (22 tests in total) |

@@ -2,7 +2,7 @@
 
 **Product:** Command-line (terminal) program in Python 3, standard library only
 **Context:** Intro to Computer Programming Final Exam (individual take-home project)
-**Version:** 1.2 (1 November 2026)
+**Version:** 1.3 (1 November 2026)
 **Name:** "Calibry", a play on *colibri* (hummingbird) and *calibrate*: the program builds a calorie formula from other people's data, then tests it against the user's own Garmin data.
 
 This document has two parts: **(1) Program Design** and **(2) PRD**. Save it as `docs/PRD.md` so the coding agent can read it. The `docs/` folder does not need to be submitted.
@@ -32,7 +32,7 @@ Three features, one per menu item:
 |---|---|---|
 | 1 | Dataset summary | Days loaded, users, broken rows skipped, non-wear days excluded, averages, and how many days fall into each activity level |
 | 2 | Compare predictors | Explains how the formula is built, builds `calories = a + b × x` for every predictor, ranks them by R², and states the best formula in plain words |
-| 3 | Check your data (Garmin) | Takes one day of Garmin data, shows the estimated calories, the difference from Garmin, your step percentile, and the 3 most similar Fitbit users |
+| 3 | Check your data (Garmin) | Takes one day of Garmin data, shows the estimates from the two best formulas the user has data for, the difference from Garmin, and the user's step percentile |
 | 4 | Exit | Ends the program |
 
 ### 1.4 Text wireframes
@@ -80,14 +80,13 @@ Every extra 1 km adds about 120 kcal.
 This formula explains about 36% of the variation in calories.
 ```
 
-**Menu 3: Check your data** (illustrative day: 6,534 steps, 4.9 km, 20 very active minutes, 780 sedentary minutes, 2,150 kcal; made-up values, not the user's real Garmin data)
+**Menu 3: Check your data** (illustrative day: 6,534 steps, 4.9 km, 20 very active minutes, 2,150 kcal; made-up values, not the user's real Garmin data)
 
 ```
 Type the numbers from one day in Garmin Connect.
 Steps that day          : 6534
 Distance (km)           : 4.9
 Very active minutes     : 20
-Sedentary minutes       : 780
 Total calories (Garmin) : 2150
 
 ------------------------------------------------------------------
@@ -98,12 +97,6 @@ Difference (best formula)         : +76 kcal (+3.5%)
 Your steps percentile             : 45 (of 396 days)
 ------------------------------------------------------------------
 Garmin uses heart rate and your body profile, so a difference is expected.
-
-Most similar Fitbit users
-Rank  User           Avg steps  Very active  Sedentary
-1     7086361926         6,104         26.2        889
-2     3977333714         8,664         12.2        709
-3     4319703577         8,532          7.2        720
 ```
 
 Both wireframes show real program output on the current file (396 days). The menu 3 inputs are an illustrative day, not real Garmin data.
@@ -124,13 +117,13 @@ Files:
 | `models.py` | Constants (file name, thresholds, predictor list) and the classes `DayRecord`, `FitbitDataset`, `LinearModel` |
 | `text_utils.py` | Clean text, parse dates in M/D/YYYY form with a one- or two-digit month and day ("3/9/2016", "4/12/2016"), parse numbers from text |
 | `data_loader.py` | Read the CSV, skip broken rows, separate non-wear days |
-| `analysis.py` | Averages, percentile, per-user averages, hand-written sorting, regression, similarity |
+| `analysis.py` | Averages, percentile, hand-written sorting, regression ranking, choosing the formulas for menu 3 |
 | `main.py` | Menu, input validation, table output |
 | `test_project.py` | Unit tests |
 
 ### 1.6 Main flows
 
-**A. Loading data.** The loader reads each row with `csv.reader`. A row is skipped and counted as *broken* if it has the wrong number of columns, a blank cell in any used column, a number that cannot be converted, or a date that is not in M/D/YYYY form. A row that reads correctly but has `TotalSteps == 0` is counted as *non-wear*, whatever its sedentary minutes, and is not used for formulas, averages, percentiles, or similarity. Both counts are reported separately on the start screen.
+**A. Loading data.** The loader reads each row with `csv.reader`. A row is skipped and counted as *broken* if it has the wrong number of columns, a blank cell in any used column, a number that cannot be converted, or a date that is not in M/D/YYYY form. A row that reads correctly but has `TotalSteps == 0` is counted as *non-wear*, whatever its sedentary minutes, and is not used for formulas, averages, or percentiles. Both counts are reported separately on the start screen.
 
 **B. Building one formula (simple linear regression).** For predictor x and target y (calories):
 
@@ -144,12 +137,11 @@ If Σ(x − x̄)² or Σ(y − ȳ)² is 0, the formula is not built and the prog
 
 **C. Compare predictors (menu 2).** The program prints the "How this works" explanation, builds one formula for each predictor in `PREDICTORS`, stores them in a list, ranks the list by R² with a hand-written selection sort, prints the table, and states the best formula in a plain sentence.
 
-**D. Check your data (menu 3).** The user types steps, distance (km, decimals allowed), very active minutes, sedentary minutes, and Garmin total calories. The program:
+**D. Check your data (menu 3).** The user types steps, distance (km, decimals allowed), very active minutes, and Garmin total calories. The program:
 
-1. Picks the best-ranked fitted formula whose predictor the user supplied (steps, distance, very active minutes, or sedentary minutes) and uses it for the main estimate. On the current file this is the Total distance formula (R² 0.36). The program also shows the Total steps formula estimate on a second line for comparison; if steps is already the chosen formula, the second line is not shown.
+1. Builds the list of fitted formulas whose predictor the user supplied (steps, distance, or very active minutes), keeping the R² ranking from menu 2, and shows the estimates from the first 2 with slicing `[:2]`. The first one is the main estimate. On the current file these are Total distance (R² 0.36) and Total steps (R² 0.31). If only one formula matches, only one line is shown.
 2. Computes the difference (estimate − Garmin) in kcal and as a percentage of Garmin's figure (safe when Garmin's figure is 0).
 3. Computes the step percentile: the share of dataset days with fewer steps than the user.
-4. Finds the 3 most similar Fitbit users by Euclidean distance on average steps, very active minutes, and sedentary minutes. Each variable is divided by its dataset maximum first so the scales are comparable. The ranking uses the same hand-written sort, then slicing `[:3]`.
 
 ### 1.7 Data dictionary
 
@@ -159,12 +151,12 @@ Columns used from `dailyActivity_merged.csv`:
 |---|---|---|
 | Id | int | Grouping by user (anonymous number) |
 | ActivityDate | str | Parsed and stored (M/D/YYYY, one- or two-digit month and day) |
-| TotalSteps | int | Predictor, percentile, similarity, non-wear check |
+| TotalSteps | int | Predictor, percentile, non-wear check |
 | TotalDistance | float | Predictor |
-| VeryActiveMinutes | int | Predictor, similarity |
+| VeryActiveMinutes | int | Predictor |
 | FairlyActiveMinutes | int | Predictor |
 | LightlyActiveMinutes | int | Predictor |
-| SedentaryMinutes | int | Predictor, similarity, non-wear check |
+| SedentaryMinutes | int | Predictor (shown in menu 2 only) |
 | Calories | int | Formula target |
 
 Skipped columns: TrackerDistance (almost identical to TotalDistance), LoggedActivitiesDistance (mostly zero), and the four distance-by-intensity columns (already covered by the minute columns).
@@ -211,7 +203,7 @@ Actors: **User** (Garmin owner) and **Examiner** (lecturer who runs the program 
 1. Meet every requirement of the Final Exam and its grading rubric.
 2. Use the CSV as material for building formulas, not only as data to display.
 3. Let the user test those formulas with their own wearable data.
-4. Write all logic (averages, regression, sorting, similarity) by hand so every line can be explained in the video.
+4. Write all logic (averages, regression, sorting) by hand so every line can be explained in the video.
 
 **Non-goals**
 
@@ -260,9 +252,9 @@ Priority: P0 required to pass the rubric, P1 strongly wanted, P2 only if time al
 
 **FR-5 Check your data with Garmin (P0)**
 
-- Input: steps, distance (km, decimals allowed), very active minutes, sedentary minutes, and Garmin total calories.
-- Output: estimate from the best-ranked fitted formula whose predictor the user supplied (Total distance on the current file), the Total steps formula estimate on a second line for comparison, difference in kcal and percent (from the main estimate), step percentile, and the 3 most similar Fitbit users.
-- Acceptance: very active + sedentary minutes over 1,440 is rejected with a message; Garmin calories of 0 do not cause division by zero (the percent is shown as n/a); the illustrative day in 1.4 (6,534 steps, 4.9 km, 20, 780, 2,150 kcal; not real Garmin data) gives 2,226 kcal from the distance formula and 2,196 kcal from the steps formula.
+- Input: steps, distance (km, decimals allowed), very active minutes, and Garmin total calories. Sedentary minutes are not asked for.
+- Output: estimates from the first 2 fitted formulas, in ranked order, whose predictor the user supplied (Total distance and Total steps on the current file); difference in kcal and percent from the first (main) estimate; step percentile.
+- Acceptance: very active minutes over 1,440 are rejected with a message; Garmin calories of 0 do not cause division by zero (the percent is shown as n/a); the illustrative day in 1.4 (6,534 steps, 4.9 km, 20, 2,150 kcal; not real Garmin data) gives 2,226 kcal from the distance formula and 2,196 kcal from the steps formula.
 
 **FR-6 Train/test check (DROPPED)**
 
@@ -323,11 +315,11 @@ Dropped in version 1.2: the file covers only 32 dates, too few for a meaningful 
 |---|---|---|
 | Variables, data types, constants | `models.py` | `CSV_FILE`, `PREDICTORS`, `DayRecord.__init__` |
 | Input and output | `main.py` | `ask_int`, `print_table` |
-| Operators | `analysis.py` | `average`, `LinearModel.fit`, `percentile`, `distance` |
+| Operators | `analysis.py` | `average`, `LinearModel.fit`, `percentile` |
 | Conditionals | `models.py` | `DayRecord.activity_level` |
 | Loops | `main.py` / `analysis.py` | `main` (while), `sort_by` (for) |
-| Functions | `analysis.py` | `build_model`, `most_similar_users` |
-| Lists and slicing | `analysis.py` | `rank_predictors`, `most_similar_users` (`[:3]`) |
+| Functions | `analysis.py` | `build_model`, `supplied_models` |
+| Lists and slicing | `analysis.py` / `main.py` | `rank_predictors`, `show_check` (`[:2]`) |
 | String manipulation | `text_utils.py` | `clean_text`, `parse_date` |
 | OOP | `models.py` | `DayRecord`, `FitbitDataset`, `LinearModel` |
 | Unit tests | `test_project.py` | at least 5 tests |
