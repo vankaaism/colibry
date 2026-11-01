@@ -66,36 +66,47 @@ R² shows how much of the variation in calories the line explains (0 to 1).
 MAE is the average error in kcal.
 
 ------------------------------------------------------------------
-Rank  Predictor              a (base)   b (per unit)    R²     MAE
+Rank  Predictor                 a (base)  b (per unit)    R²   MAE
 ------------------------------------------------------------------
-1     Total steps              ....        ....        0.xx    ...
-2     Very active minutes      ....        ....        0.xx    ...
-...
+1     Total distance             1,636.8      120.2781  0.36   504
+2     Total steps                1,634.0        0.0861  0.31   528
+3     Very active minutes        2,027.6       13.4630  0.27   521
+4     Fairly active minutes      2,090.8       14.4107  0.14   568
+5     Lightly active minutes     1,881.7        2.0502  0.08   599
+6     Sedentary minutes          1,958.4        0.3457  0.02   611
 ------------------------------------------------------------------
-Best formula: calories = 1,6xx + 0.0x × steps
-Every extra 1,000 steps adds about xx kcal.
+Best formula: calories = 1,637 + 120.2781 × distance (km)
+Every extra 1 km adds about 120 kcal.
+This formula explains about 36% of the variation in calories.
 ```
 
-**Menu 3: Check your data**
+**Menu 3: Check your data** (example day: 6,534 steps, 4.9 km)
 
 ```
+Type the numbers from one day in Garmin Connect.
 Steps that day          : 6534
+Distance (km)           : 4.9
 Very active minutes     : 20
 Sedentary minutes       : 780
 Total calories (Garmin) : 2150
 
-------------------------------------------------
-Estimate (Total steps formula) : 2,0xx kcal
-Garmin                         : 2,150 kcal
-Difference                     : -1xx kcal (x.x%)
-Your steps percentile          : 4x (of 396 days)
-------------------------------------------------
+------------------------------------------------------------------
+Estimate (Total distance formula) : 2,226 kcal
+Estimate (Total steps formula)    : 2,196 kcal
+Garmin                            : 2,150 kcal
+Difference (best formula)         : +76 kcal (+3.5%)
+Your steps percentile             : 45 (of 396 days)
+------------------------------------------------------------------
+Garmin uses heart rate and your body profile, so a difference is expected.
+
 Most similar Fitbit users
-Rank  User          Avg steps  Very active  Sedentary
-1     150....          ....        ..          ...
-2     ...
-3     ...
+Rank  User           Avg steps  Very active  Sedentary
+1     7086361926         6,104         26.2        889
+2     3977333714         8,664         12.2        709
+3     4319703577         8,532          7.2        720
 ```
+
+The figures in both wireframes are real output on the current file (396 days).
 
 Display rule: every result is shown in aligned columns, never as a raw Python list.
 
@@ -133,10 +144,10 @@ If Σ(x − x̄)² or Σ(y − ȳ)² is 0, the formula is not built and the prog
 
 **C. Compare predictors (menu 2).** The program prints the "How this works" explanation, builds one formula for each predictor in `PREDICTORS`, stores them in a list, ranks the list by R² with a hand-written selection sort, prints the table, and states the best formula in a plain sentence.
 
-**D. Check your data (menu 3).** The user types steps, very active minutes, sedentary minutes, and Garmin total calories. The program:
+**D. Check your data (menu 3).** The user types steps, distance (km, decimals allowed), very active minutes, sedentary minutes, and Garmin total calories. The program:
 
-1. Uses the formula with the highest R² to estimate calories.
-2. Computes the difference in kcal and as a percentage of Garmin's figure (safe when Garmin's figure is 0).
+1. Picks the best-ranked fitted formula whose predictor the user supplied (steps, distance, very active minutes, or sedentary minutes) and uses it for the main estimate. On the current file this is the Total distance formula (R² 0.36). The program also shows the Total steps formula estimate on a second line for comparison; if steps is already the chosen formula, the second line is not shown.
+2. Computes the difference (estimate − Garmin) in kcal and as a percentage of Garmin's figure (safe when Garmin's figure is 0).
 3. Computes the step percentile: the share of dataset days with fewer steps than the user.
 4. Finds the 3 most similar Fitbit users by Euclidean distance on average steps, very active minutes, and sedentary minutes. Each variable is divided by its dataset maximum first so the scales are comparable. The ranking uses the same hand-written sort, then slicing `[:3]`.
 
@@ -249,9 +260,9 @@ Priority: P0 required to pass the rubric, P1 strongly wanted, P2 only if time al
 
 **FR-5 Check your data with Garmin (P0)**
 
-- Input: steps, very active minutes, sedentary minutes, and Garmin total calories.
-- Output: estimate from the best formula, difference in kcal and percent, step percentile, and the 3 most similar Fitbit users.
-- Acceptance: very active + sedentary minutes over 1,440 is rejected with a message; Garmin calories of 0 do not cause division by zero.
+- Input: steps, distance (km, decimals allowed), very active minutes, sedentary minutes, and Garmin total calories.
+- Output: estimate from the best-ranked fitted formula whose predictor the user supplied (Total distance on the current file), the Total steps formula estimate on a second line for comparison, difference in kcal and percent (from the main estimate), step percentile, and the 3 most similar Fitbit users.
+- Acceptance: very active + sedentary minutes over 1,440 is rejected with a message; Garmin calories of 0 do not cause division by zero (the percent is shown as n/a); the example day (6,534 steps, 4.9 km, 20, 780, 2,150 kcal) gives 2,226 kcal from the distance formula and 2,196 kcal from the steps formula.
 
 **FR-6 Train/test check (DROPPED)**
 
