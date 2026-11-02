@@ -4,12 +4,12 @@ import os
 import tempfile
 import unittest
 
-from models import (DayRecord, LinearModel, LEVEL_SEDENTARY,
+from models import (DayRecord, FitbitDataset, LinearModel, LEVEL_SEDENTARY,
                     LEVEL_LIGHTLY_ACTIVE, LEVEL_ACTIVE)
 from text_utils import parse_date
 from data_loader import load_dataset
 from analysis import (average, percentage, percentile, sort_by, rank_predictors,
-                      supplied_models, interpret_difference)
+                      supplied_models, interpret_difference, dataset_summary)
 
 HEADER = ("Id,ActivityDate,TotalSteps,TotalDistance,TrackerDistance,"
           "LoggedActivitiesDistance,VeryActiveDistance,ModeratelyActiveDistance,"
@@ -191,6 +191,35 @@ class TestInterpretDifference(unittest.TestCase):
         """Every message names the MAE in kcal."""
         for difference in [0, 400, 2000]:
             self.assertIn("(MAE 504 kcal)", interpret_difference(difference, 504))
+
+
+class TestDatasetSummary(unittest.TestCase):
+    """Tests for the average steps and calories per activity level."""
+
+    def test_level_averages(self):
+        """Each level averages only its own days, and an empty level gives 0.0."""
+        dataset = FitbitDataset()
+        dataset.add(make_record(steps=2000, calories=1800))
+        dataset.add(make_record(steps=4000, calories=2000))
+        dataset.add(make_record(steps=6000, calories=2200))
+        dataset.add(make_record(steps=8000, calories=2600))
+        summary = dataset_summary(dataset)
+        levels = summary["levels"]
+
+        self.assertEqual(levels[0]["level"], LEVEL_SEDENTARY)
+        self.assertEqual(levels[0]["count"], 2)
+        self.assertAlmostEqual(levels[0]["avg_steps"], 3000.0)
+        self.assertAlmostEqual(levels[0]["avg_calories"], 1900.0)
+
+        self.assertEqual(levels[1]["level"], LEVEL_LIGHTLY_ACTIVE)
+        self.assertEqual(levels[1]["count"], 2)
+        self.assertAlmostEqual(levels[1]["avg_steps"], 7000.0)
+        self.assertAlmostEqual(levels[1]["avg_calories"], 2400.0)
+
+        self.assertEqual(levels[2]["level"], LEVEL_ACTIVE)
+        self.assertEqual(levels[2]["count"], 0)
+        self.assertEqual(levels[2]["avg_steps"], 0.0)
+        self.assertEqual(levels[2]["avg_calories"], 0.0)
 
 
 class TestParseDate(unittest.TestCase):

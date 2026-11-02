@@ -71,7 +71,7 @@ Days used                 : 396 days from 34 users
 
 The menu repeats until you choose 4. Every answer is checked in a loop: an empty answer, text, a decimal at a whole-number prompt, or a number out of range gives a message and asks again.
 
-**1. Dataset summary.** Shows the load counts, number of users, average steps, very active minutes, sedentary minutes and calories, and how many days fall into each activity level (Sedentary under 5,000 steps, Lightly Active 5,000 to 9,999, Active 10,000 or more).
+**1. Dataset summary.** Shows the load counts, number of users, average steps, very active minutes, sedentary minutes and calories, and, for each activity level (Sedentary under 5,000 steps, Lightly Active 5,000 to 9,999, Active 10,000 or more), the number and percentage of days plus their average steps and average calories. The step limits follow Tudor-Locke and Bassett (2004); their 5,000-7,499 and 7,500-9,999 groups are merged into Lightly Active.
 
 ```
 Average steps             : 7,555
@@ -79,10 +79,13 @@ Average very active min   : 19.1
 Average sedentary min     : 942.2
 Average calories          : 2,284 kcal
 ------------------------------------------------------------------
-Activity level      Days   Percent
-Sedentary            136     34.3%
-Lightly Active       133     33.6%
-Active               127     32.1%
+Activity level      Days   Percent  Avg steps  Avg calories
+Sedentary            136     34.3%      2,366         1,782
+Lightly Active       133     33.6%      7,238         2,438
+Active               127     32.1%     13,444         2,660
+------------------------------------------------------------------
+Levels: Sedentary under 5,000 steps, Lightly Active 5,000 to 9,999, Active 10,000 or more.
+Limits follow Tudor-Locke & Bassett (2004); their 5,000-7,499 and 7,500-9,999 groups are merged into Lightly Active.
 ```
 
 **2. Compare predictors.** Explains how the formula works, builds one formula for each of six predictors, ranks them by R² with a hand-written selection sort, and states the best one in plain words.
@@ -129,6 +132,10 @@ Garmin uses heart rate and your body profile, so a difference is expected.
 - **Partly logged days.** 224 of 457 days have very active + fairly active + lightly active + sedentary minutes adding up to less than 1440, so part of the day was not logged. These days stay in the data, which may make the minute-based formulas less accurate.
 - **Garmin vs Fitbit distance.** The distance formula was built from Fitbit's distance figures. Garmin may measure distance differently, so the distance estimate for a Garmin day may be less reliable than the formula's R² suggests.
 - **Why distance beats steps (a guess).** Total distance fits slightly better than total steps (R² 0.36 vs 0.31). My guess, not tested, is that this is partly because distance depends on stride length, which reflects body size, and body size also affects calories.
+
+## References
+
+Tudor-Locke, C., & Bassett, D. R. (2004). How many steps/day are enough? Preliminary pedometer indices for public health. *Sports Medicine, 34*(1), 1-8. https://doi.org/10.2165/00007256-200434010-00001
 
 ## Video
 

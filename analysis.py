@@ -70,17 +70,24 @@ def sort_by(items, key_name, descending=False):
 
 
 def dataset_summary(dataset):
-    """Return a dict with days, users, averages and the days per activity level."""
+    """Return a dict with days, users, averages and the days, steps and calories per activity level."""
     records = dataset.records
     days = len(records)
 
     levels = []
     for level in ACTIVITY_LEVELS:
-        count = 0
+        matching = []
         for record in records:
             if record.activity_level() == level:
-                count = count + 1
-        levels.append({"level": level, "count": count, "percent": percentage(count, days)})
+                matching.append(record)
+        count = len(matching)
+        levels.append({
+            "level": level,
+            "count": count,
+            "percent": percentage(count, days),
+            "avg_steps": average(column_values(matching, "steps")),
+            "avg_calories": average(column_values(matching, "calories")),
+        })
 
     return {
         "days": days,

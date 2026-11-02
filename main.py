@@ -114,11 +114,14 @@ def show_summary(dataset, broken, non_wear):
     print(f"Average sedentary min     : {summary['avg_sedentary']:.1f}")
     print(f"Average calories          : {summary['avg_calories']:,.0f} kcal")
     print_line()
-    print(f"{'Activity level':<18}{'Days':>6}{'Percent':>10}")
+    print(f"{'Activity level':<18}{'Days':>6}{'Percent':>10}{'Avg steps':>11}{'Avg calories':>14}")
     for level in summary["levels"]:
-        print(f"{level['level']:<18}{level['count']:>6}{level['percent']:>9.1f}%")
+        print(f"{level['level']:<18}{level['count']:>6}{level['percent']:>9.1f}%"
+              f"{level['avg_steps']:>11,.0f}{level['avg_calories']:>14,.0f}")
     print_line()
     print("Levels: Sedentary under 5,000 steps, Lightly Active 5,000 to 9,999, Active 10,000 or more.")
+    print("Limits follow Tudor-Locke & Bassett (2004); their 5,000-7,499 and "
+          "7,500-9,999 groups are merged into Lightly Active.")
 
 
 def show_predictors(dataset):
