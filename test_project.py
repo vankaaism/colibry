@@ -3,6 +3,7 @@
 import os
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from models import (DayRecord, FitbitDataset, LinearModel, LEVEL_SEDENTARY,
                     LEVEL_LIGHTLY_ACTIVE, LEVEL_ACTIVE)
@@ -10,6 +11,7 @@ from text_utils import parse_date
 from data_loader import load_dataset
 from analysis import (average, percentage, percentile, sort_by, rank_predictors,
                       supplied_models, interpret_difference, dataset_summary)
+from main import ask_int, ask_float
 
 HEADER = ("Id,ActivityDate,TotalSteps,TotalDistance,TrackerDistance,"
           "LoggedActivitiesDistance,VeryActiveDistance,ModeratelyActiveDistance,"
@@ -220,6 +222,24 @@ class TestDatasetSummary(unittest.TestCase):
         self.assertEqual(levels[2]["count"], 0)
         self.assertEqual(levels[2]["avg_steps"], 0.0)
         self.assertEqual(levels[2]["avg_calories"], 0.0)
+
+
+class TestAskInput(unittest.TestCase):
+    """Tests for the input loops in main.py, with input() replaced by fake answers."""
+
+    @patch("builtins.print")
+    @patch("builtins.input", side_effect=["abc", "", "3.5", "99", "2"])
+    def test_ask_int_retries_until_valid(self, fake_input, fake_print):
+        """Bad answers are asked again, and the first valid whole number is returned."""
+        self.assertEqual(ask_int("Choose: ", 1, 4), 2)
+        self.assertEqual(fake_input.call_count, 5)
+
+    @patch("builtins.print")
+    @patch("builtins.input", side_effect=["abc", "", "-1", "4.8"])
+    def test_ask_float_retries_until_valid(self, fake_input, fake_print):
+        """Bad answers are asked again, and the first valid number is returned."""
+        self.assertEqual(ask_float("Distance: ", 0, 100), 4.8)
+        self.assertEqual(fake_input.call_count, 4)
 
 
 class TestParseDate(unittest.TestCase):
